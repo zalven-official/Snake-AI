@@ -7,12 +7,7 @@ import daisyUIThemes from '../assets/daisyUIThemes.json';
 import useChangeTheme from '../helpers/useChangeTheme';
 import Background from './Background';
 
-const routers = [
-  { link: '/', text: 'Home' },
-  { link: '/About', text: 'About' },
-  { link: '/Project', text: 'Projects' },
-  { link: '/Contact', text: 'Contact' },
-];
+const routers = [{ link: '/', text: 'Home' }];
 
 type NavigationProps = {
   children: JSX.Element | JSX.Element[] | string | string[];
