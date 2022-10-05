@@ -1,14 +1,9 @@
 import { useRef, useEffect } from 'react';
 
-function useFrameLoop(callback: (time: number, deltaTime: number) => void) {
+function useFrameLoop(callback: () => void) {
   const requestID = useRef<number>();
-  const previousTime = useRef<number>();
-  const loop = (time: number) => {
-    previousTime.current = time || 0;
-    if (previousTime.current !== undefined) {
-      const deltaTime = time - previousTime.current;
-      callback(time, deltaTime);
-    }
+  const loop = () => {
+    callback();
     requestID.current = requestAnimationFrame(loop);
   };
   useEffect(() => {

@@ -29,6 +29,7 @@ function NavigationBar({ children }: NavigationProps) {
         <div className="drawer-content ">
           <Background />
           <div className="relative flex items-start justify-center sm:pt-0 ">
+            <div className="flex-0 w-full max-w-7xl ">{children}</div>
             <div className="fixed top-0 navbar  max-w-7xl">
               <div className="flex-1 ">
                 <nav className="navbar top-0 fixed max-w-7xl ">
@@ -65,11 +66,11 @@ function NavigationBar({ children }: NavigationProps) {
                         );
                       })}
                     </ul>
-                    <div className="dropdown dropdown-end s">
+                    <div className="dropdown dropdown-end z-10">
                       <button
                         type="button"
                         tabIndex={0}
-                        className="btn m-1 btn-primary"
+                        className="btn m-1 btn-primary z-10"
                         title="theme-selector"
                       >
                         <BeakerIcon className="w-6" />
@@ -106,7 +107,6 @@ function NavigationBar({ children }: NavigationProps) {
                 </nav>
               </div>
             </div>
-            <div className="flex-0 w-full max-w-7xl ">{children}</div>
           </div>
         </div>
         <div className="drawer-side">
