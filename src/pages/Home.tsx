@@ -205,7 +205,64 @@ function Home() {
       );
       return bDist - aDist;
     });
-    // console.log(allPath);
+    if (allPath.length >= 1) {
+      // Create a reset env for backtracking
+      const envBacktrack = [...Array(width)].map(() => Array(height));
+      for (let i = 0; i < snakeBody.length; i += 1) {
+        envBacktrack[snakeBody[i][0]][snakeBody[i][1]] = notAllowedPattern;
+      }
+      let findEnd: Array<number> = [...start];
+      const backtrackPath: Array<Array<number>> = [];
+      while (findEnd[0] !== snakeFood[0] || findEnd[1] !== snakeFood[1]) {
+        const x = findEnd[0];
+        const y = findEnd[1];
+        const pathDirection: Array<Array<number>> = [];
+        // Up
+        if (y > 0 && envBacktrack[x][y - 1] !== notAllowedPattern) {
+          const isUp = [x, y - 1];
+          if (env[x][y - 1] === notAllowedPattern) pathDirection.push(isUp);
+        }
+        //   Down
+        if (y < height - 1 && envBacktrack[x][y + 1] !== notAllowedPattern) {
+          const isDown = [x, y + 1];
+          if (env[x][y + 1] === notAllowedPattern) pathDirection.push(isDown);
+        }
+        //  Right
+        if (x < width - 1 && envBacktrack[x + 1][y] !== notAllowedPattern) {
+          const isRight = [x + 1, y];
+          if (env[x + 1][y] === notAllowedPattern) pathDirection.push(isRight);
+        }
+
+        //  Left
+        if (x > 0 && envBacktrack[x - 1][y] !== notAllowedPattern) {
+          const isLeft = [x - 1, y];
+          if (env[x - 1][y] === notAllowedPattern) pathDirection.push(isLeft);
+        }
+        pathDirection.sort((a, b) => {
+          const aDist = distanceBetweenTwoPoints(
+            a[0],
+            a[1],
+            snakeFood[0],
+            snakeFood[1]
+          );
+          const bDist = distanceBetweenTwoPoints(
+            b[0],
+            b[1],
+            snakeFood[0],
+            snakeFood[1]
+          );
+          return aDist - bDist;
+        });
+        if (pathDirection.length >= 1) {
+          const ind = pathDirection.length - 1;
+          findEnd = [...pathDirection[0]];
+          backtrackPath.push(pathDirection[0]);
+        } else {
+          break;
+        }
+      }
+      setSnakePath(backtrackPath);
+    }
   }, [setSnakePathFind, snakeBody, snakeFood]);
   // useFrameLoop(() => {
   //   moveSnakeBody();
@@ -303,12 +360,11 @@ function Home() {
       </div>
       <div className="absolute flex">
         {snakePath?.map((y, i) => {
-          const snakeKey = `${i}_snake_path`;
+          const snakeKey = `${i}_snake_path_`;
           return (
-            <>
+            <div key={snakeKey}>
               <div
                 className="absolute w-5 h-5 bg-base-100 border-2 border-primary opacity-60 shadow-sm rounded-sm"
-                key={snakeKey}
                 style={{
                   left: `${y[0] * 22 + 5}px`,
                   top: `${y[1] * 22 + 5}px`,
@@ -316,13 +372,12 @@ function Home() {
               />
               <div
                 className="absolute w-5 h-5 bg-primary opacity-20 shadow-sm rounded-sm"
-                key={snakeKey}
                 style={{
                   left: `${y[0] * 22 + 5}px`,
                   top: `${y[1] * 22 + 5}px`,
                 }}
               />
-            </>
+            </div>
           );
         })}
       </div>
