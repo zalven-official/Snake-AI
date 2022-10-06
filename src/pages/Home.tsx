@@ -14,18 +14,6 @@ function isMoveAllowed(snakeMove: string, movement: string) {
   return false;
 }
 
-function pathFinder(
-  barrier: Array<Array<number>>,
-  start: Array<number>,
-  end: Array<number>
-) {
-  return [
-    [width / 2 - 2, height / 2 - 2],
-    [width / 2 - 2, height / 2 - 1],
-    [width / 2 - 2, height / 2],
-  ];
-}
-
 function Home() {
   // Snake Properties
   const [snakeBody, setSnakeBody] = useState<Array<Array<number>>>([
@@ -128,7 +116,7 @@ function Home() {
         allPath.push(isUp);
         pathDirection.push(isUp);
         env[x][y - 1] = notAllowedPattern;
-        setSnakePathFind(allPath);
+        if (x === snakeFood[0] && y - 1 === snakeFood[1]) break;
       }
 
       //   Down
@@ -137,7 +125,7 @@ function Home() {
         allPath.push(isDown);
         pathDirection.push(isDown);
         env[x][y + 1] = notAllowedPattern;
-        setSnakePathFind(allPath);
+        if (x === snakeFood[0] && y + 1 === snakeFood[1]) break;
       }
 
       //  Left
@@ -146,7 +134,7 @@ function Home() {
         allPath.push(isLeft);
         pathDirection.push(isLeft);
         env[x - 1][y] = notAllowedPattern;
-        setSnakePathFind(allPath);
+        if (x - 1 === snakeFood[0] && y === snakeFood[1]) break;
       }
 
       //  Right
@@ -155,7 +143,7 @@ function Home() {
         allPath.push(isRight);
         pathDirection.push(isRight);
         env[x + 1][y] = notAllowedPattern;
-        setSnakePathFind(allPath);
+        if (x + 1 === snakeFood[0] && y === snakeFood[1]) break;
       }
       pathDirection.sort((a, b) => {
         const aDist = distanceBetweenTwoPoints(
@@ -173,38 +161,51 @@ function Home() {
         return bDist - aDist;
       });
 
-      if (paths.length <= 1) {
-        for (let i = 0; i < pathDirection.length; i += 1)
-          paths.push(pathDirection[i]);
-      } else {
-        for (let i = 0; i < paths.length; i += 1) {
-          const distPath = distanceBetweenTwoPoints(
-            paths[i][0],
-            paths[i][1],
+      for (let i = 1; i < paths.length; i += 1) {
+        const distPath = distanceBetweenTwoPoints(
+          paths[i][0],
+          paths[i][1],
+          snakeFood[0],
+          snakeFood[1]
+        );
+        const direction = pathDirection.shift();
+        if (direction !== undefined) {
+          const distDirection = distanceBetweenTwoPoints(
+            direction[0],
+            direction[1],
             snakeFood[0],
             snakeFood[1]
           );
-          const direction = pathDirection.shift();
-          if (direction) {
-            const distDirection = distanceBetweenTwoPoints(
-              direction[0],
-              direction[1],
-              snakeFood[0],
-              snakeFood[1]
-            );
-            if (distDirection < distPath) {
-              paths.splice(i, 0, direction);
-              i = 0;
-            }
+          if (distDirection <= distPath) {
+            paths.splice(i, 0, direction);
+            i = 0;
           }
         }
-        for (let i = 0; i < pathDirection.length; i += 1)
-          paths.push(pathDirection[i]);
       }
+      for (let i = 0; i < pathDirection.length; i += 1)
+        paths.push(pathDirection[i]);
       paths.shift();
       setSnakePathFind(allPath);
+
       if (x === snakeFood[0] && y === snakeFood[1]) break;
+      // Back track
     }
+    allPath.sort((a, b) => {
+      const aDist = distanceBetweenTwoPoints(
+        a[0],
+        a[1],
+        snakeFood[0],
+        snakeFood[1]
+      );
+      const bDist = distanceBetweenTwoPoints(
+        b[0],
+        b[1],
+        snakeFood[0],
+        snakeFood[1]
+      );
+      return bDist - aDist;
+    });
+    // console.log(allPath);
   }, [setSnakePathFind, snakeBody, snakeFood]);
   // useFrameLoop(() => {
   //   moveSnakeBody();
