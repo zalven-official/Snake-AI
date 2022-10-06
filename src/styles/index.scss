@@ -16,3 +16,15 @@ code {
     monospace;
 }
 
+.snake-path-find{
+    animation: 0.1s ease-out forwards pulse;
+}
+@keyframes pulse {
+    0% {
+        width: 1px;
+        height: 1px;
+    }
+    100% {
+        // background-color: black;
+    }
+}

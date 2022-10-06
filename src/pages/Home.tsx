@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getRandomInt } from '../helpers/randomizer';
+import { distanceBetweenTwoPoints } from '../helpers/colliders';
 import useFrameLoop from '../helpers/useFrameLoop';
 
 const width = 58;
 const height = 38;
-const speed = 2;
 
 function isMoveAllowed(snakeMove: string, movement: string) {
   if (snakeMove === 'D') return movement !== 'U';
@@ -14,6 +14,18 @@ function isMoveAllowed(snakeMove: string, movement: string) {
   return false;
 }
 
+function pathFinder(
+  barrier: Array<Array<number>>,
+  start: Array<number>,
+  end: Array<number>
+) {
+  return [
+    [width / 2 - 2, height / 2 - 2],
+    [width / 2 - 2, height / 2 - 1],
+    [width / 2 - 2, height / 2],
+  ];
+}
+
 function Home() {
   // Snake Properties
   const [snakeBody, setSnakeBody] = useState<Array<Array<number>>>([
@@ -21,6 +33,7 @@ function Home() {
     [width / 2, height / 2 - 1],
     [width / 2, height / 2],
   ]);
+  // Snake Movement (U: Up, D: Down, L: Left, R: Right)
   const [snakeMove, setSnakeMove] = useState<string>('D');
 
   // Snake Food
@@ -28,8 +41,12 @@ function Home() {
     getRandomInt(0, width - 1),
     getRandomInt(0, height - 1),
   ]);
-  // console.log(getRandomInt(width, height));
+  // Snake path
+  const [snakePathFind, setSnakePathFind] = useState<Array<Array<number>>>();
+  // Snake path
+  const [snakePath, setSnakePath] = useState<Array<Array<number>>>();
 
+  // Change movement of snake
   function changeMovement(movement: string) {
     if (isMoveAllowed(snakeMove, movement)) setSnakeMove(movement);
   }
@@ -86,8 +103,111 @@ function Home() {
     setSnakeBody(body);
   }
 
+  useEffect(() => {
+    const start = snakeBody[snakeBody.length - 1];
+    const paths: Array<Array<number>> = [start];
+    const allPath: Array<Array<number>> = [start];
+    // Create env
+    const env = [...Array(width)].map(() => Array(height));
+
+    // Env Patterns for O(N) search
+    const notAllowedPattern = -1;
+
+    for (let i = 0; i < snakeBody.length; i += 1) {
+      env[snakeBody[i][0]][snakeBody[i][1]] = notAllowedPattern;
+    }
+    while (paths.length > 0) {
+      const x = paths[0][0];
+      const y = paths[0][1];
+
+      const pathDirection: Array<Array<number>> = [];
+
+      // Up
+      if (y > 0 && env[x][y - 1] !== notAllowedPattern) {
+        const isUp = [x, y - 1];
+        allPath.push(isUp);
+        pathDirection.push(isUp);
+        env[x][y - 1] = notAllowedPattern;
+        setSnakePathFind(allPath);
+      }
+
+      //   Down
+      if (y < height - 1 && env[x][y + 1] !== notAllowedPattern) {
+        const isDown = [x, y + 1];
+        allPath.push(isDown);
+        pathDirection.push(isDown);
+        env[x][y + 1] = notAllowedPattern;
+        setSnakePathFind(allPath);
+      }
+
+      //  Left
+      if (x > 0 && env[x - 1][y] !== notAllowedPattern) {
+        const isLeft = [x - 1, y];
+        allPath.push(isLeft);
+        pathDirection.push(isLeft);
+        env[x - 1][y] = notAllowedPattern;
+        setSnakePathFind(allPath);
+      }
+
+      //  Right
+      if (x < width - 1 && env[x + 1][y] !== notAllowedPattern) {
+        const isRight = [x + 1, y];
+        allPath.push(isRight);
+        pathDirection.push(isRight);
+        env[x + 1][y] = notAllowedPattern;
+        setSnakePathFind(allPath);
+      }
+      pathDirection.sort((a, b) => {
+        const aDist = distanceBetweenTwoPoints(
+          a[0],
+          a[1],
+          snakeFood[0],
+          snakeFood[1]
+        );
+        const bDist = distanceBetweenTwoPoints(
+          b[0],
+          b[1],
+          snakeFood[0],
+          snakeFood[1]
+        );
+        return bDist - aDist;
+      });
+
+      if (paths.length <= 1) {
+        for (let i = 0; i < pathDirection.length; i += 1)
+          paths.push(pathDirection[i]);
+      } else {
+        for (let i = 0; i < paths.length; i += 1) {
+          const distPath = distanceBetweenTwoPoints(
+            paths[i][0],
+            paths[i][1],
+            snakeFood[0],
+            snakeFood[1]
+          );
+          const direction = pathDirection.shift();
+          if (direction) {
+            const distDirection = distanceBetweenTwoPoints(
+              direction[0],
+              direction[1],
+              snakeFood[0],
+              snakeFood[1]
+            );
+            if (distDirection < distPath) {
+              paths.splice(i, 0, direction);
+              i = 0;
+            }
+          }
+        }
+        for (let i = 0; i < pathDirection.length; i += 1)
+          paths.push(pathDirection[i]);
+      }
+      paths.shift();
+      setSnakePathFind(allPath);
+      if (x === snakeFood[0] && y === snakeFood[1]) break;
+    }
+  }, [setSnakePathFind, snakeBody, snakeFood]);
   // useFrameLoop(() => {
-  //   // moveSnakeBody();
+  //   moveSnakeBody();
   // });
 
   return (
@@ -161,6 +281,47 @@ function Home() {
                 );
               })}
             </div>
+          );
+        })}
+      </div>
+
+      <div className="absolute flex">
+        {snakePathFind?.map((y, i) => {
+          const snakeKey = `${i}_snake_path_find`;
+          return (
+            <div
+              className="absolute w-5 h-5 bg-base-100 border border-secondary opacity-40 shadow-sm rounded-sm snake-path-find"
+              key={snakeKey}
+              style={{
+                left: `${y[0] * 22 + 5}px`,
+                top: `${y[1] * 22 + 5}px`,
+              }}
+            />
+          );
+        })}
+      </div>
+      <div className="absolute flex">
+        {snakePath?.map((y, i) => {
+          const snakeKey = `${i}_snake_path`;
+          return (
+            <>
+              <div
+                className="absolute w-5 h-5 bg-base-100 border-2 border-primary opacity-60 shadow-sm rounded-sm"
+                key={snakeKey}
+                style={{
+                  left: `${y[0] * 22 + 5}px`,
+                  top: `${y[1] * 22 + 5}px`,
+                }}
+              />
+              <div
+                className="absolute w-5 h-5 bg-primary opacity-20 shadow-sm rounded-sm"
+                key={snakeKey}
+                style={{
+                  left: `${y[0] * 22 + 5}px`,
+                  top: `${y[1] * 22 + 5}px`,
+                }}
+              />
+            </>
           );
         })}
       </div>
