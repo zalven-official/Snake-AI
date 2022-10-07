@@ -155,7 +155,6 @@ function Home() {
         break;
       }
     }
-    if (foodFind) setScore(score + 1);
 
     // Back track
     if (allPath.length >= 1 && foodFind) {
@@ -265,6 +264,7 @@ function Home() {
             }
           }
           if (hasDroppedAvailable) {
+            setScore(score + 1);
             setSnakeFood([dropX, dropY]);
             break;
           }
